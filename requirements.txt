@@ -1,12 +1,11 @@
-# 要素式起诉状转换器 - 依赖
+# 要素式文书转换器 - 依赖
 # 核心（必装）
 python-docx>=0.8.11        # Word(.docx) 输出，法院提交格式
-gradio>=4.0.0              # Web 界面
+gradio>=3.43.0             # Web 界面（3.x / 4.x 均兼容，实测 3.43.2）
+pywebview>=4.0.0           # 桌面应用窗口（pywebview 包装 Gradio 成原生窗口）
 
 # 命令行美化（可选，缺失则降级为普通输出）
 rich>=13.0.0
 
 # LLM 抽取（可选；启用 --use-llm 时需要）
 # 智谱GLM / OpenAI 兼容协议，用标准库 urllib 即可，无需额外 SDK
-# 如需 OpenAI 官方 SDK 写法，可解开下面一行：
-# openai>=1.0.0

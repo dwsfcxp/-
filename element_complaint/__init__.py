@@ -9,8 +9,9 @@ from .schemas import (
 )
 from .extractor import RuleExtractor, detect_cause, normalize, parse_amount_value
 from .llm_extractor import extract_with_llm, merge_into
-from .pipeline import convert, convert_via_court
+from .pipeline import convert, convert_via_court, convert_application
 from .renderer import render_markdown, render_text, render_docx
+from .renderer import render_execution_markdown, render_execution_text, render_execution_docx
 
 __all__ = [
     "Field", "ElementGroup", "CauseSchema",
@@ -19,8 +20,9 @@ __all__ = [
     "SCHEMAS", "get_schema", "all_causes", "full_groups",
     "RuleExtractor", "detect_cause", "normalize", "parse_amount_value",
     "extract_with_llm", "merge_into",
-    "convert", "convert_via_court",
+    "convert", "convert_via_court", "convert_application",
     "render_markdown", "render_text", "render_docx",
+    "render_execution_markdown", "render_execution_text", "render_execution_docx",
 ]
 
 __version__ = "1.0.0"

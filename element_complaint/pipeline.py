@@ -113,3 +113,61 @@ def _wrap_text_as_docx(text: str) -> bytes:
     buf = io.BytesIO()
     doc.save(buf)
     return buf.getvalue()
+
+
+def convert_application(
+    text: str,
+    *,
+    doc_type: str = '强制执行申请书',
+    fmt: str = 'markdown',          # 'text' | 'markdown' | 'docx'
+    out_path: Optional[str] = None,
+    cutoff_date=None,               # 利息截止日（date），默认今天
+    paid_amount=None,               # 被执行人已付款
+    target_amount=None,             # 涉案金额（本金兜底）
+) -> Dict:
+    """
+    强制执行申请书（普通叙述式）→ 要素式强制执行申请书。
+
+    沿用 execution_request 引擎（移植自法穿 FachuanHybridSystem）：
+    解析金额/利息/费用、计算逾期利息、生成申请执行事项，并表格化为要素式。
+
+    返回: {'doc_type','output','computation','source':'execution_request'}
+    """
+    from .execution_request import build_execution_request
+    from .extractor import extract_parties, split_sections, normalize
+    from .renderer import render_execution_markdown, render_execution_text, render_execution_docx
+
+    comp = build_execution_request(
+        text,
+        cutoff_date=cutoff_date,
+        paid_amount=paid_amount,
+        target_amount=target_amount,
+    )
+
+    # 当事人（申请人/被申请人）—— 复用起诉状当事人抽取，已支持"申请人/被申请人"角色
+    t = normalize(text)
+    sections = split_sections(t)
+    applicant, respondent = extract_parties(sections['parties'])
+    result = {
+        'doc_type': doc_type,
+        'computation': comp,
+        'applicant': applicant,
+        'respondent': respondent,
+    }
+
+    if fmt == 'docx':
+        os.makedirs(config.OUTPUT_DIR, exist_ok=True)
+        path = out_path or os.path.join(config.OUTPUT_DIR, f"要素式{doc_type}.docx")
+        render_execution_docx(result, path)
+        output = path
+    elif fmt == 'text':
+        output = render_execution_text(result)
+    else:  # markdown
+        output = render_execution_markdown(result)
+
+    return {
+        'doc_type': doc_type,
+        'output': output,
+        'computation': comp,
+        'source': 'execution_request',
+    }
