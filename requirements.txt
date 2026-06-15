@@ -1,11 +1,17 @@
 # 要素式文书转换器 - 依赖
 # 核心（必装）
 python-docx>=0.8.11        # Word(.docx) 输出，法院提交格式
-gradio>=3.43.0             # Web 界面（3.x / 4.x 均兼容，实测 3.43.2）
-pywebview>=4.0.0           # 桌面应用窗口（pywebview 包装 Gradio 成原生窗口）
+gradio>=4.0.0              # Web 界面
 
 # 命令行美化（可选，缺失则降级为普通输出）
 rich>=13.0.0
 
-# LLM 抽取（可选；启用 --use-llm 时需要）
-# 智谱GLM / OpenAI 兼容协议，用标准库 urllib 即可，无需额外 SDK
+# 桌面应用（desktop_app.py，可选；缺失则用 Web 界面）
+pywebview>=4.0.0
+
+# znszj 法院官方API后端（可选；仅 --court 时需要，代码内懒加载）
+requests>=2.20.0
+
+# LLM 抽取（可选）
+# 起诉状 LLM 补抽：智谱GLM / OpenAI 兼容协议，用标准库 urllib 即可，无需额外 SDK
+# 强制执行申请书 LLM 兜底：复用法穿原逻辑，需本地 Ollama 服务（如 qwen3.5:0.8b）

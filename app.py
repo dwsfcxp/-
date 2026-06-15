@@ -4,10 +4,15 @@ Gradio Web 界面：普通起诉状/申请书 → 要素式
 
 启动：python app.py，浏览器打开 http://127.0.0.1:7860
 桌面应用：python desktop_app.py（pywebview 包装成本地窗口）
+
+下载说明：gr.File 下载需要 launch(allowed_paths=[output目录]) 才能正确 serve。
+桌面模式下浏览器下载可能受限，另提供【打开文件夹】按钮（explorer /select），
+直接在资源管理器里选中生成的 Word，可拖到微信/邮件。
 """
 import os
 import subprocess
-from datetime import date, datetime
+import sys
+from datetime import date
 
 import gradio as gr
 
@@ -64,6 +69,24 @@ def run(text, doc_type, cause, use_llm, use_court, cutoff_str):
         return f"❌ 转换失败: {e}", None, f"❌ {e}", ""
 
 
+def open_folder(docx_path):
+    """在资源管理器里打开并选中生成的 Word（桌面模式最可靠的交付方式）。"""
+    if not docx_path or not os.path.exists(docx_path):
+        return "⚠️ 没有文件可打开，请先点【转换】生成文书"
+    abspath = os.path.abspath(docx_path)
+    try:
+        if sys.platform == 'win32':
+            # explorer /select,<path> 会打开父目录并选中该文件
+            subprocess.Popen(['explorer', '/select,', abspath])
+        elif sys.platform == 'darwin':
+            subprocess.Popen(['open', '-R', abspath])
+        else:
+            subprocess.Popen(['xdg-open', os.path.dirname(abspath)])
+    except Exception as e:
+        return f"❌ 打开失败: {e}"
+    return f"📁 已在文件夹中选中：{os.path.basename(abspath)}\n可直接拖到微信/邮件发送"
+
+
 def send_wechat(docx_path):
     """把最近生成的 docx 通过 Tailscale 发到手机，由手机端转发微信。"""
     if not docx_path or not os.path.exists(docx_path):
@@ -91,9 +114,8 @@ with gr.Blocks(title="要素式文书转换器", theme=gr.themes.Soft()) as app:
 
     gr.Markdown(
         "# 📋 普通文书 → 要素式 转换器\n"
-        "粘贴普通（叙述式）**民事起诉状** 或 **强制执行申请书**，自动转换为法院要素式文书，可下载 Word 或一键发到手机微信。\n\n"
-        "- **民事起诉状**：规则抽取 + 可选 LLM 补抽 / 法院官方 API\n"
-        "- **强制执行申请书**：移植自法穿 execution_request 引擎（金额/利息/费用解析 + 利息计算）"
+        "粘贴普通（叙述式）**民事起诉状** 或 **强制执行申请书**，自动转换为法院要素式文书。\n\n"
+        "生成 Word 后：点【📁 打开文件夹】在资源管理器里取文件 / 【💬 发到手机微信】/ 直接【下载】。"
     )
 
     with gr.Row():
@@ -110,6 +132,8 @@ with gr.Blocks(title="要素式文书转换器", theme=gr.themes.Soft()) as app:
             cutoff_in = gr.Textbox(value=_today_str(), label="利息截止日 YYYY-MM-DD（执行申请书用）")
             with gr.Row():
                 btn = gr.Button("🚀 转换", variant="primary")
+            with gr.Row():
+                open_btn = gr.Button("📁 打开文件夹")
                 wx_btn = gr.Button("💬 发到手机微信")
 
         with gr.Column(scale=1):
@@ -119,6 +143,7 @@ with gr.Blocks(title="要素式文书转换器", theme=gr.themes.Soft()) as app:
 
     btn.click(run, [text_in, doc_type_in, cause_in, llm_chk, court_chk, cutoff_in],
               [md_out, file_out, info_out, last_docx])
+    open_btn.click(open_folder, [last_docx], [info_out])
     wx_btn.click(send_wechat, [last_docx], [info_out])
 
     gr.Examples(
@@ -134,5 +159,9 @@ with gr.Blocks(title="要素式文书转换器", theme=gr.themes.Soft()) as app:
     )
 
 
+# allowed_paths：让 Gradio 能 serve output/ 下的 Word 文件，下载链接才有效
+ALLOWED_PATHS = [config.OUTPUT_DIR, config.BASE_DIR]
+
 if __name__ == "__main__":
-    app.launch(server_name="127.0.0.1", server_port=7860, inbrowser=True)
+    app.launch(server_name="127.0.0.1", server_port=7860, inbrowser=True,
+               allowed_paths=ALLOWED_PATHS)

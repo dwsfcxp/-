@@ -32,6 +32,7 @@ def start_gradio():
     gradio_app.app.launch(
         server_name="127.0.0.1", server_port=7860,
         inbrowser=False, prevent_thread_lock=True, show_api=False,
+        allowed_paths=gradio_app.ALLOWED_PATHS,
     )
 
 
